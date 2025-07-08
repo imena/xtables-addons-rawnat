@@ -26,3 +26,5 @@ Makefile.in
 /libtool
 /stamp-h1
 /xtables-addons.8
+
+.idea

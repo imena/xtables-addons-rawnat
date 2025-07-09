@@ -134,7 +134,7 @@ rawsnat_tg4(struct sk_buff *skb, const struct xt_action_param *par)
 	if (iph->saddr == new_addr)
 		return XT_CONTINUE;
 
-	if (!skb_try_make_writable(skb, rawnat4_writable_part(iph)))
+	if (skb_ensure_writable(skb, rawnat4_writable_part(iph)))
 		return NF_DROP;
 
 	iph = ip_hdr(skb);
@@ -156,7 +156,7 @@ rawdnat_tg4(struct sk_buff *skb, const struct xt_action_param *par)
 	if (iph->daddr == new_addr)
 		return XT_CONTINUE;
 
-	if (!skb_try_make_writable(skb, rawnat4_writable_part(iph)))
+	if (skb_ensure_writable(skb, rawnat4_writable_part(iph)))
 		return NF_DROP;
 
 	iph = ip_hdr(skb);
@@ -189,12 +189,12 @@ static bool rawnat6_prepare_l4(struct sk_buff *skb, unsigned int *l4offset,
 
 	switch (*l4proto) {
 	case IPPROTO_TCP:
-		if (!skb_try_make_writable(skb, *l4offset + sizeof(struct tcphdr)))
+		if (skb_ensure_writable(skb, *l4offset + sizeof(struct tcphdr)))
 			return false;
 		break;
 	case IPPROTO_UDP:
 	case IPPROTO_UDPLITE:
-		if (!skb_try_make_writable(skb, *l4offset + sizeof(struct udphdr)))
+		if (skb_ensure_writable(skb, *l4offset + sizeof(struct udphdr)))
 			return false;
 		break;
 	}

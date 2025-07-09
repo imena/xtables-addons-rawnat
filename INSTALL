@@ -16,7 +16,7 @@ To use DKMS:
 
 	$ apt install linux-headers-$(uname -r) gcc make autoconf libtool pkg-config libxtables-dev libelf-dev
 	$ apt install dkms
-	$ git clone https://github.com/s3rj1k/xtables-addons-rawnat /usr/src/xtables-addon-rawnat-20190902
+	$ git clone https://github.com/imena/xtables-addons-rawnat /usr/src/xtables-addon-rawnat-20190902
 
 	$ cd /usr/src/xtables-addon-rawnat-20190902
 	$ ./autogen.sh

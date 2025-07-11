@@ -4,6 +4,9 @@
  *
  * Based on iptable_raw.c
  * Copyright (C) 2003 Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>
+ *
+ * https://github.com/torvalds/linux/blob/master/net/ipv4/netfilter/iptable_raw.c
+ * https://github.com/torvalds/linux/blob/master/net/ipv4/netfilter/iptable_nat.c
  */
 #include <linux/module.h>
 #include <linux/netfilter_ipv4/ip_tables.h>

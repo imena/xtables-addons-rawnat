@@ -24,7 +24,7 @@ static const struct xt_table packet_rawpost = {
 	.me = THIS_MODULE,
 	.af = NFPROTO_IPV4,
 	.priority = NF_IP_PRI_LAST,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0)
 	.table_init = iptable_rawpost_table_init,
 #endif
 };
@@ -94,7 +94,11 @@ static int __net_init iptable_rawpost_table_init(struct net *net)
 	repl = ipt_alloc_initial_table(&packet_rawpost);
 	if (repl == NULL)
 		return -ENOMEM;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0)
+	ret = ipt_register_table(net, &packet_rawpost, repl, rawposttable_ops);
+	kfree(repl);
+	return ret;
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
 	ret = ipt_register_table(net, &packet_rawpost, repl, rawposttable_ops, iptable_rawpost);
 	kfree(repl);
 	return ret;
@@ -110,7 +114,9 @@ static void __net_exit iptable_rawpost_net_exit(struct net *net)
 	struct xt_table **iptable_rawpost = rawpost_pernet(net);
 	if (!*iptable_rawpost)
 		return;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0)
+    ipt_unregister_table_pre_exit(net, "rawpost");
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
 	ipt_unregister_table(net, *iptable_rawpost, rawposttable_ops);
 #else
 	ipt_unregister_table(net, *iptable_rawpost);

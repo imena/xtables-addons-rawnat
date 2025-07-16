@@ -58,6 +58,7 @@ rawnat_ipv6_mask(__be32 *addr, const __be32 *repl, unsigned int mask)
 		addr[0] = repl[0];
 		addr[1] = repl[1];
 		addr[2] = remask(addr[2], repl[2], mask - 64);
+		break;
 	case 96:
 		addr[0] = repl[0];
 		addr[1] = repl[1];

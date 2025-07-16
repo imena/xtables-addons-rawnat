@@ -28,7 +28,7 @@ static const struct xt_table packet_rawpost = {
 	.me = THIS_MODULE,
 	.af = NFPROTO_IPV4,
 	.priority = NF_IP_PRI_LAST,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0)
 	.table_init = iptable_rawpost_table_init,
 #endif
 };
@@ -53,7 +53,7 @@ static unsigned int iptable_rawpost_hook(void *priv, struct sk_buff *skb, const 
 
     return ipt_do_table(skb, state, table);
 }
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
+#else
 static unsigned int iptable_rawpost_hook(void *priv, struct sk_buff *skb, const struct nf_hook_state *state)
 {
 	if (state->hook == NF_INET_POST_ROUTING && (skb->len < sizeof(struct iphdr) || ip_hdrlen(skb) < sizeof(struct iphdr)))
@@ -61,37 +61,6 @@ static unsigned int iptable_rawpost_hook(void *priv, struct sk_buff *skb, const 
 		return NF_ACCEPT;
 
 	return ipt_do_table(skb, state, *rawpost_pernet(state->net));
-}
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0)
-static unsigned int iptable_rawpost_hook(const struct nf_hook_ops *ops, struct sk_buff *skb, const struct nf_hook_state *state)
-{
-	if (ops->hooknum == NF_INET_POST_ROUTING && (skb->len < sizeof(struct iphdr) || ip_hdrlen(skb) < sizeof(struct iphdr)))
-		/* root is playing with raw sockets. */
-		return NF_ACCEPT;
-
-	return ipt_do_table(skb, ops->hooknum, state, *rawpost_pernet(state->net));
-}
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 13, 0)
-static unsigned int iptable_rawpost_hook(const struct nf_hook_ops *ops, struct sk_buff *skb,
-    const struct net_device *in, const struct net_device *out,
-    int (*okfn)(struct sk_buff *))
-{
-	if (ops->hooknum == NF_INET_POST_ROUTING && (skb->len < sizeof(struct iphdr) || ip_hdrlen(skb) < sizeof(struct iphdr)))
-		/* root is playing with raw sockets. */
-		return NF_ACCEPT;
-
-	return ipt_do_table(skb, ops->hooknum, in, out, *rawpost_pernet(dev_net((in != NULL) ? in : out)));
-}
-#else
-static unsigned int iptable_rawpost_hook(unsigned int hook, struct sk_buff *skb,
-    const struct net_device *in, const struct net_device *out,
-    int (*okfn)(struct sk_buff *))
-{
-	if (hook == NF_INET_POST_ROUTING && (skb->len < sizeof(struct iphdr) || ip_hdrlen(skb) < sizeof(struct iphdr)))
-		/* root is playing with raw sockets. */
-		return NF_ACCEPT;
-
-	return ipt_do_table(skb, hook, in, out, *rawpost_pernet(dev_net((in != NULL) ? in : out)));
 }
 #endif
 
@@ -105,9 +74,7 @@ static int __net_init iptable_rawpost_table_init(struct net *net)
 {
 	struct xt_table **iptable_rawpost = rawpost_pernet(net);
 	struct ipt_replace *repl;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
 	int ret;
-#endif
 
 	if (*iptable_rawpost)
 		return 0;
@@ -119,14 +86,10 @@ static int __net_init iptable_rawpost_table_init(struct net *net)
 	ret = ipt_register_table(net, &packet_rawpost, repl, rawposttable_ops);
 	kfree(repl);
 	return ret;
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
+#else
 	ret = ipt_register_table(net, &packet_rawpost, repl, rawposttable_ops, iptable_rawpost);
 	kfree(repl);
 	return ret;
-#else
-	*iptable_rawpost = ipt_register_table(net, &packet_rawpost, repl);
-	kfree(repl);
-	return PTR_ERR_OR_ZERO(*iptable_rawpost);
 #endif
 }
 
@@ -137,18 +100,13 @@ static void __net_exit iptable_rawpost_net_exit(struct net *net)
 		return;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0)
     ipt_unregister_table_pre_exit(net, "rawpost");
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
-	ipt_unregister_table(net, *iptable_rawpost, rawposttable_ops);
 #else
-	ipt_unregister_table(net, *iptable_rawpost);
+	ipt_unregister_table(net, *iptable_rawpost, rawposttable_ops);
 #endif
 	*iptable_rawpost = NULL;
 }
 
 static struct pernet_operations iptable_rawpost_net_ops = {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 6, 0)
-	.init = iptable_rawpost_table_init,
-#endif
 	.exit = iptable_rawpost_net_exit,
 	.id   = &rawpost_net_id,
 	.size = sizeof(struct xt_table *),
@@ -158,7 +116,6 @@ static int __init iptable_rawpost_init(void)
 {
 	int ret;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
 	/* Register hooks */
 	rawposttable_ops = xt_hook_ops_alloc(&packet_rawpost, iptable_rawpost_hook);
 	if (IS_ERR(rawposttable_ops))
@@ -175,31 +132,14 @@ static int __init iptable_rawpost_init(void)
 		unregister_pernet_subsys(&iptable_rawpost_net_ops);
 		kfree(rawposttable_ops);
 	}
-#else
- 	ret = register_pernet_subsys(&iptable_rawpost_net_ops);
-	if (ret < 0)
- 		return ret;
- 
-	/* Register hooks */
-	rawposttable_ops = xt_hook_link(&packet_rawpost, iptable_rawpost_hook);
-	if (IS_ERR(rawposttable_ops)) {
-		ret = PTR_ERR(rawposttable_ops);
- 		unregister_pernet_subsys(&iptable_rawpost_net_ops);
-	}
-#endif
 
 	return ret;
 }
 
 static void __exit iptable_rawpost_fini(void)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
 	unregister_pernet_subsys(&iptable_rawpost_net_ops);
 	kfree(rawposttable_ops);
-#else
-	xt_hook_unlink(&packet_rawpost, rawposttable_ops);
-	unregister_pernet_subsys(&iptable_rawpost_net_ops);
-#endif
 }
 
 module_init(iptable_rawpost_init);

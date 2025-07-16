@@ -16,7 +16,11 @@
 #include <net/netns/generic.h>
 #include <net/ip.h>
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0)
+static int iptable_rawpost_table_init(struct net *net);
+#else
 static int __net_init iptable_rawpost_table_init(struct net *net);
+#endif
 
 static const struct xt_table packet_rawpost = {
 	.name = "rawpost",
@@ -36,7 +40,20 @@ static inline struct xt_table **rawpost_pernet(struct net *net)
 }
 
 /* The work comes in here from netfilter.c. */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0)
+static unsigned int iptable_rawpost_hook(void *priv, struct sk_buff *skb, const struct nf_hook_state *state)
+{
+    struct xt_table *table = *rawpost_pernet(state->net);
+
+    if (!table)
+        return NF_ACCEPT;
+
+    if (state->hook == NF_INET_POST_ROUTING && (skb->len < sizeof(struct iphdr) || ip_hdrlen(skb) < sizeof(struct iphdr)))
+        return NF_ACCEPT;
+
+    return ipt_do_table(skb, state, table);
+}
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
 static unsigned int iptable_rawpost_hook(void *priv, struct sk_buff *skb, const struct nf_hook_state *state)
 {
 	if (state->hook == NF_INET_POST_ROUTING && (skb->len < sizeof(struct iphdr) || ip_hdrlen(skb) < sizeof(struct iphdr)))
@@ -80,7 +97,11 @@ static unsigned int iptable_rawpost_hook(unsigned int hook, struct sk_buff *skb,
 
 static struct nf_hook_ops *rawposttable_ops __read_mostly;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0)
+static int iptable_rawpost_table_init(struct net *net)
+#else
 static int __net_init iptable_rawpost_table_init(struct net *net)
+#endif
 {
 	struct xt_table **iptable_rawpost = rawpost_pernet(net);
 	struct ipt_replace *repl;

@@ -14,6 +14,11 @@ Manual install:
 
 To use DKMS:
 
+    $ sudo update-alternatives --config iptables
+           select iptables-legacy from list
+    $ sudo update-alternatives --config ip6tables
+           select ip6tables-legacy from list
+
 	$ apt install linux-headers-$(uname -r) gcc make autoconf libtool pkg-config libxtables-dev libelf-dev
 	$ apt install dkms
 	$ git clone https://github.com/imena/xtables-addons-rawnat /usr/src/xtables-addon-rawnat-20190902

@@ -23,11 +23,11 @@ static int __net_init iptable_rawpost_table_init(struct net *net);
 #endif
 
 static const struct xt_table packet_rawpost = {
-	.name = "rawpost",
-	.valid_hooks = 1 << NF_INET_POST_ROUTING,
-	.me = THIS_MODULE,
-	.af = NFPROTO_IPV4,
-	.priority = NF_IP_PRI_LAST,
+	.name = "rawpost",                           /* A unique name. Up to 32 chars */
+	.valid_hooks = 1 << NF_INET_POST_ROUTING,    /* list of Chains (POSTROUTING) */
+	.me = THIS_MODULE,                           /* Set this to THIS_MODULE if you are a module, otherwise NULL */
+	.af = NFPROTO_IPV4,                          /* address/protocol family (IPv4) */
+	.priority = NF_IP_PRI_LAST,                  /* hook order */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0)
 	.table_init = iptable_rawpost_table_init,
 #endif

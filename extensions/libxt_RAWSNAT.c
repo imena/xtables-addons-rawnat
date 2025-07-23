@@ -170,7 +170,12 @@ static struct xtables_target rawsnat_tg_reg[] = {
 	},
 };
 
-static void _init(void)
+/*
+    https://github.com/PKRoma/iptables/blob/master/libxtables/xtables.c
+
+    https://github.com/nawawi/xtables-addons/blob/e5c23837bc226d460e5b2824c77c755ef82189c2/extensions/libxt_PROTO.c
+*/
+static void __attribute__((constructor)) _init(void)
 {
 	xtables_register_targets(rawsnat_tg_reg,
 		sizeof(rawsnat_tg_reg) / sizeof(*rawsnat_tg_reg));

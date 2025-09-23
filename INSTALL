@@ -23,12 +23,13 @@ To use DKMS:
 	$ apt install dkms
 
 	$ git clone https://github.com/imena/xtables-addons-rawnat /usr/src/xtables-addon-rawnat-20190902
+	$ cd /usr/src/xtables-addon-rawnat-20190902
+
         for ubuntu18.04 or ubuntu20.04 use:
 	$ git checkout tags/ubuntu20
         for ubuntu22.04 use:
 	$ git checkout tags/ubuntu22
 
-	$ cd /usr/src/xtables-addon-rawnat-20190902
 	$ ./autogen.sh
 	$ ./configure
 	$ make

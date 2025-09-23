@@ -29,6 +29,8 @@ To use DKMS:
 	$ git checkout tags/ubuntu20
         for ubuntu22.04 use:
 	$ git checkout tags/ubuntu22
+        for ubuntu24.04 use:
+        $ git checkout tags/ubuntu24
 
 	$ ./autogen.sh
 	$ ./configure

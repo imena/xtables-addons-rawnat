@@ -19,12 +19,6 @@ static const struct xt_table packet_rawpost = {
 	.priority = NF_IP6_PRI_LAST,
 };
 
-/* The work comes in here from netfilter.c. */
-static unsigned int ip6table_rawpost_hook(void *priv, struct sk_buff *skb, const struct nf_hook_state *state)
-{
-	return ip6t_do_table(skb, state, priv);
-}
-
 static struct nf_hook_ops *rawposttable_ops __read_mostly;
 
 static int ip6table_rawpost_table_init(struct net *net)
@@ -66,7 +60,7 @@ static int __init ip6table_rawpost_init(void)
 		return ret;
 
 	/* Register hooks */
-	rawposttable_ops = xt_hook_ops_alloc(table, ip6table_rawpost_hook);
+	rawposttable_ops = xt_hook_ops_alloc(table, ip6t_do_table);
 	if (IS_ERR(rawposttable_ops)) {
 		xt_unregister_template(table);
 		return PTR_ERR(rawposttable_ops);
